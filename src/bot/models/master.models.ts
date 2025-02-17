@@ -1,68 +1,72 @@
-import { Column, DataType, Model } from "sequelize-typescript";
+import { Column, DataType, Model, Table } from "sequelize-typescript";
 
-
-interface IMasterCreationAttr{
-    master_id: number | undefined;
-    name: string | undefined;
-    phone_number: string | undefined;
-    workshop_name: string | undefined;
-    adress: string | undefined;
-    target: string | undefined;
-    location: string | undefined;
-    work_starting: string | undefined;
-    work_ending: string | undefined;
-    minuts: string | undefined;
+interface IMasterCreationAttr {
+  user_id: number | undefined;
+  profession_id: number | undefined;
+  name: string | undefined;
+  phone_number: string | undefined;
+  workshop_name: string | undefined;
+  address: string | undefined;
+  location: string | undefined;
+  start_work_time: string | undefined;
+  end_work_time: string | undefined;
+  one_working_time: number | undefined;
+  last_state: string;
 }
 
-export class Master extends Model<Master, IMasterCreationAttr>{
-    @Column({
-            type:DataType.BIGINT,
-            primaryKey: true
-    })
-    master_id:number | undefined;
+@Table({ tableName: "master" })
+export class Master extends Model<Master, IMasterCreationAttr> {
+  @Column({
+    type: DataType.INTEGER,
+    primaryKey: true,
+    autoIncrement:true
 
-    @Column({
-        type:DataType.STRING,
-    })
-    name: string | undefined;
+  })
+  id: number | undefined;
+  @Column({
+    type: DataType.BIGINT,
+  })
+  user_id: number | undefined;
 
-    @Column({
-        type:DataType.STRING,
-    })
-    phone_number: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  name: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  phone_number: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  workshop_name: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  address: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  location: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  start_work_time: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  end_work_time: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  one_working_time: number | undefined;
+  @Column({
+    type: DataType.BOOLEAN,
+  })
+  is_confirmed: boolean | undefined;
 
-    @Column({
-        type:DataType.STRING,
-    })
-    workshop_name: string | undefined;
-
-    @Column({
-        type:DataType.STRING,
-    })
-    adress: string | undefined;
-
-    @Column({
-        type:DataType.STRING,
-    })
-    target: string | undefined;
-
-    @Column({
-        type:DataType.STRING,
-    })
-    location: string | undefined;
-
-    @Column({
-        type:DataType.STRING,
-    })
-    work_starting: string | undefined;
-
-    @Column({
-        type:DataType.STRING,
-    })
-    work_ending: string | undefined;
-
-    @Column({
-        type:DataType.STRING,
-    })
-    minuts: string | undefined;
+  @Column({
+    type: DataType.STRING,
+  })
+  last_state: string;
 }
