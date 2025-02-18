@@ -10,8 +10,9 @@ import {
   Update,
 } from "nestjs-telegraf";
 import { UseFilters, UseGuards } from "@nestjs/common";
-import { TelegrafExceptionFilter } from "src/filters/telegraf-exception.filter";
+import { TelegrafExceptionFilter } from "../filters/telegraf-exception.filter";
 import { AdminBotGuard } from "../guards/admin.guards";
+
 
 @Update()
 export class BotUpdate {
@@ -38,6 +39,7 @@ export class BotUpdate {
 
   @Action(/^profession_+\d+/)
   async onClickProfession(@Ctx() ctx: Context) {
+    console.log("11");
     await this.botService.onClickProfession(ctx);
   }
 

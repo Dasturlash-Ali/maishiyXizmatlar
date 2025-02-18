@@ -7,6 +7,7 @@ import { BOT_NAME } from "src/app.constants";
 import { Bot } from "./models/bot.models";
 import { Master } from "./models/master.models";
 
+
 @Injectable()
 export class BotService {
   constructor(
@@ -402,7 +403,7 @@ export class BotService {
     }
   }
 
-  async onClickProfession(ctx: Context) {
+  async onClickProfession(ctx: Context) {    
     try {
       const user_id = ctx.from?.id;
       const user = await this.botModel.findOne({
@@ -417,7 +418,8 @@ export class BotService {
             .oneTime(),
         });
       } else if (user) {
-        const profession_id = ctx.callbackQuery!["data"].split("_")[1];
+        const professionAction = ctx.callbackQuery!["data"];
+        const profession_id = parseInt(professionAction.split("_")[1]);
         if (profession_id) {
           const profession =
             await this.professionModel.findByPk(+profession_id);
@@ -455,11 +457,26 @@ export class BotService {
       } else if (user) {
         user.role = "master";
         await user.save();
+
         const professions = await this.professionModel.findAll({
           where: { last_state: "finish" },
         });
-        let replyProfessions: any[] = [];
+        let replyProfessions: any[] = [
+          [
+            {text: "SARTAROSH", callback_data: `profession_sartarosh`},
+            {text: "SOATSOZ", callback_data: `profession_soatsoz`},
+          ],
+          [
+            {text: "GO'ZALLIK SALONI", callback_data: `profession_go'zallik`},
+            {text: "ZARGARLIK", callback_data: `profession_zargarlik`},
+          ],
+          [
+            {text: "POYABZAL USTASI", callback_data: `profession_poyabzal`},
+            {text: "BOSHQALAR", callback_data: `profession_boshqa`},
+          ]
+        ];
 
+        if(professions.length > 0){
         professions.forEach((profession) =>
           replyProfessions.push([
             {
@@ -467,7 +484,9 @@ export class BotService {
               callback_data: `profession_${profession.id}`,
             },
           ])
-        );
+        )}
+
+        console.log("Reply Keyboard:", JSON.stringify(replyProfessions, null, 2));
 
         await ctx.reply("Iltimos ish turini tanlang: ", {
           reply_markup: {
@@ -727,7 +746,7 @@ export class BotService {
             order: [["id", "DESC"]],
           });
           if (master && master.last_state == "name") {
-            master.name = ctx.message.text;
+            master.name = (ctx.message as any).text;
             master.last_state = "phone_number";
             await master.save();
             await ctx.reply(
@@ -737,7 +756,7 @@ export class BotService {
               ]).resize()
             );
           } else if (master && master.last_state == "workshop_name") {
-            master.workshop_name = ctx.message.text;
+            master.workshop_name = (ctx.message as any).text;
             master.last_state = "address";
             await master.save();
 
@@ -746,7 +765,7 @@ export class BotService {
               Markup.keyboard(["Tashlab ketish ➡️"]).resize()
             );
           } else if (master && master.last_state == "address") {
-            master.address = ctx.message.text;
+            master.address = (ctx.message as any).text;
             master.last_state = "location";
             await master.save();
 
@@ -766,7 +785,7 @@ export class BotService {
             order: [["id", "DESC"]],
           });
           if (profession && !profession.name) {
-            profession.name = ctx.message.text;
+            profession.name = (ctx.message as any).text;
             profession.last_state = "finish";
             await profession.save();
 
