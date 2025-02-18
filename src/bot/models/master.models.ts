@@ -1,4 +1,5 @@
-import { Column, DataType, Model, Table } from "sequelize-typescript";
+import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { Profession } from "./professions.model";
 
 interface IMasterCreationAttr {
   user_id: number | undefined;
@@ -11,6 +12,7 @@ interface IMasterCreationAttr {
   start_work_time: string | undefined;
   end_work_time: string | undefined;
   one_working_time: number | undefined;
+  rating:number | undefined;
   last_state: string;
 }
 
@@ -20,9 +22,19 @@ export class Master extends Model<Master, IMasterCreationAttr> {
     type: DataType.INTEGER,
     primaryKey: true,
     autoIncrement:true
-
+    
   })
   id: number | undefined;
+
+  @ForeignKey(()=>Profession)
+  @Column({
+    type: DataType.INTEGER,
+  })
+  profession_id: number | undefined;
+
+  @BelongsTo(()=>Profession)
+  profession : Profession
+
   @Column({
     type: DataType.BIGINT,
   })
@@ -62,11 +74,18 @@ export class Master extends Model<Master, IMasterCreationAttr> {
   one_working_time: number | undefined;
   @Column({
     type: DataType.BOOLEAN,
+    defaultValue:false
   })
   is_confirmed: boolean | undefined;
+
+  @Column({
+    type:DataType.INTEGER
+  })
+  rating:number;
 
   @Column({
     type: DataType.STRING,
   })
   last_state: string;
+
 }

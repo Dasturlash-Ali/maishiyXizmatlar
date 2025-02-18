@@ -8,8 +8,11 @@ import { Profession } from './models/professions.model';
 
 
 @Module({
-  imports:[SequelizeModule.forFeature([Bot, Master, Profession])],
-  providers: [BotService, BotUpdate],
+  imports:[SequelizeModule.forFeature([Bot, Profession, Master])],
+  providers: [
+    BotUpdate,
+    BotService,
+  ],
   exports:[BotService],
 })
 export class BotModule {}

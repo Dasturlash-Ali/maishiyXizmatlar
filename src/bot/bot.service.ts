@@ -1,9 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/sequelize";
 import { Context, Markup, Telegraf } from "telegraf";
-// import { Bot } from "./models/bot.model";
 import { Profession } from "./models/professions.model";
-// import { Master } from "./models/master.model";
 import { InjectBot } from "nestjs-telegraf";
 import { BOT_NAME } from "src/app.constants";
 import { Bot } from "./models/bot.models";
@@ -17,7 +15,6 @@ export class BotService {
     private readonly professionModel: typeof Profession,
     @InjectModel(Master) private readonly masterModel: typeof Master,
     @InjectBot(BOT_NAME) private readonly bot: Telegraf<Context>
-
   ) {}
 
   async onStart(ctx: Context) {
@@ -49,7 +46,7 @@ export class BotService {
       console.log("onStart error: ", error);
     }
   }
-  
+
   async onStop(ctx: Context) {
     try {
       const user_id = ctx.from?.id;
@@ -118,20 +115,16 @@ export class BotService {
           master.last_state = "is_confirmed";
           await master.save();
 
-          await ctx.reply(
-            "Tasdiqlaysizmi:",
-            {
-              ...Markup.keyboard([
-                ['Tasdiqlash✅', 'Bekor qilish❌']
-              ]).resize()
-            }
-          );
+          await ctx.reply("Tasdiqlaysizmi:", {
+            ...Markup.keyboard([["Tasdiqlash✅", "Bekor qilish❌"]]).resize(),
+          });
         }
       }
     } catch (error) {
       console.log("onClickOneWorkingTime error: ", error);
     }
   }
+
   async onClickEndWorkTime(ctx: Context) {
     try {
       const user_id = ctx.from?.id;
@@ -153,7 +146,9 @@ export class BotService {
         });
         if (master && master.last_state == "end_work_time") {
           const end_work_time = ctx.callbackQuery!["data"].split("__")[1];
-          master.start_work_time = end_work_time;
+          console.log(end_work_time);
+
+          master.end_work_time = end_work_time;
           master.last_state = "one_working_time";
           await master.save();
 
@@ -164,14 +159,18 @@ export class BotService {
               reply_markup: {
                 inline_keyboard: [
                   [
-                    { text: "15 daqiqa🕒", callback_data: "one_working_time__15" },
+                    {
+                      text: "15 daqiqa🕒",
+                      callback_data: "one_working_time__15",
+                    },
                   ],
                   [
-                    { text: "30 daqiqa🕞", callback_data: "one_working_time__30" },
+                    {
+                      text: "30 daqiqa🕞",
+                      callback_data: "one_working_time__30",
+                    },
                   ],
-                  [
-                    { text: "1 soat🕐", callback_data: "one_working_time__60" },
-                  ],
+                  [{ text: "1 soat🕐", callback_data: "one_working_time__60" }],
                 ],
               },
             }
@@ -180,6 +179,169 @@ export class BotService {
       }
     } catch (error) {
       console.log("onClickEndWorkTime error: ", error);
+    }
+  }
+
+  async onClickCallAdmin(ctx: Context) {
+    try {
+      const master_id = ctx.callbackQuery!["data"].split("__")[1];
+      console.log(master_id);
+      
+      const master = await this.masterModel.findOne({
+        where: { user_id: master_id },
+        order: [["id", "DESC"]],
+      });
+
+      
+      if (master) {
+        console.log(master.phone_number);
+        
+        await ctx.reply(
+          "Adminga telefon raqamingiz yuborilsinmi, sizga shu raqam orqali aloqaga chiqishadi",
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Ha✅",
+                    callback_data: `send_admin__${master.phone_number}`,
+                  },
+                ],
+              ],
+            },
+          }
+        );
+      }
+    } catch (error) {
+      console.log("onClickCallAdmin error: ", error);
+    }
+  }
+  async onSendPhoneNumber(ctx: Context) {
+    try {
+      const master_phoneNumber = ctx.callbackQuery!["data"].split("__")[1];
+      if (master_phoneNumber) {
+        this.bot.telegram.sendMessage(
+          process.env.ADMIN!,
+          `Sizga ushbu raqam bilan murojat tushdi ${master_phoneNumber}`
+        );
+        await ctx.reply("Qabul qilindi✅")
+      }
+    } catch (error) {
+      console.log("onSendPhoneNumber error: ", error);
+    }
+  }
+  async onClickRejectMaster(ctx: Context) {
+    try {
+      const master_id = ctx.callbackQuery!["data"].split("__")[1];
+      const master = await this.masterModel.findOne({
+        where: { id: master_id },
+        order: [["id", "DESC"]],
+      });
+      if (master) {
+        if (!master.is_confirmed && master.last_state == "is_confirmed") {
+          await master.destroy();
+          console.log(master);
+
+          await ctx.reply(
+            "Sizning so'rvingiz muvaffaqqiyatli bekor qilindi ✅",
+            {
+              ...Markup.keyboard([["Ro'yxatdan o'tish 👨‍💻"]])
+                .resize()
+                .oneTime(),
+            }
+          );
+        }
+      }
+    } catch (error) {
+      console.log("onClickRejectMaster error: ", error);
+    }
+  }
+  async onClickCheckAction(ctx: Context) {
+    try {
+      const master_id = ctx.callbackQuery!["data"].split("_")[1];
+      const master = await this.masterModel.findOne({
+        where: { id: master_id },
+        order: [["id", "DESC"]],
+      });
+      if (master) {
+        if (!master.is_confirmed && master.last_state == "is_confirmed") {
+          await ctx.reply("Sizning so'rovingiz hali tasdiqlanganicha yo'q 🤷‍♂️");
+        } else if (!master.is_confirmed && master.last_state == "finish") {
+          await ctx.reply(
+            "Sizning so'rovingiz rad etilgan ❌\n<i>Qaytadan ro'yxatdan o'tishingiz mumkin</i>",
+            {
+              parse_mode: "HTML",
+              ...Markup.keyboard([["Usta 👨‍🔧", "Mijoz 👤"]])
+                .resize()
+                .oneTime(),
+            }
+          );
+        } else if (master.is_confirmed && master.last_state == "finish") {
+          await ctx.reply("Sizning so'rovingiz tasdiqlangan ✅", {
+            ...Markup.keyboard([
+              ["Mijozlar 👤", "Vaqt🕒", "Reyting 📈"],
+              ["Ma'lumotlarni o'zgartirish 📝"],
+            ]).resize(),
+          });
+        }
+      }
+    } catch (error) {
+      console.log("onClickCheckAction error: ", error);
+    }
+  }
+
+  async onClickCinfirmForAdmin(ctx: Context) {
+    try {
+      const master_id = ctx.callbackQuery!["data"].split("_")[1];
+      const master = await this.masterModel.findOne({
+        where: { id: master_id, last_state: "is_confirmed" },
+        order: [["id", "DESC"]],
+      });
+      if (master) {
+        master.last_state = "finish";
+        master.is_confirmed = true;
+        await master.save();
+
+        await this.bot.telegram.sendMessage(
+          master.user_id!,
+          "Sizning so'rovingiz muvaqqiyatli tasdiqlandi",
+          {
+            ...Markup.keyboard([
+              ["Mijozlar 👤", "Vaqt🕒", "Reyting 📈"],
+              ["Ma'lumotlarni o'zgartirish 📝"],
+            ]).resize(),
+          }
+        );
+      }
+    } catch (error) {
+      console.log("onClickCinfirmForAdmin error: ", error);
+    }
+  }
+
+  async onClickRejectForAdmin(ctx: Context) {
+    try {
+      const master_id = ctx.callbackQuery!["data"].split("_")[1];
+      const master = await this.masterModel.findOne({
+        where: { id: master_id, last_state: "is_confirmed" },
+        order: [["id", "DESC"]],
+      });
+      if (master) {
+        master.last_state = "finish";
+        master.is_confirmed = false;
+        await master.save();
+
+        await this.bot.telegram.sendMessage(
+          master.user_id!,
+          "Kechirasiz sizning so'rovingiz rad etildi😔",
+          {
+            ...Markup.keyboard([["Ro'yxatdan o'tish 👨‍💻"]])
+              .resize()
+              .oneTime(),
+          }
+        );
+      }
+    } catch (error) {
+      console.log("onClickRejectForAdmin error: ", error);
     }
   }
 
@@ -277,6 +439,7 @@ export class BotService {
       console.log("onClickProfession error: ", error);
     }
   }
+
   async onClickMaster(ctx: Context) {
     try {
       const user_id = ctx.from?.id;
@@ -306,7 +469,7 @@ export class BotService {
           ])
         );
 
-        await ctx.reply("Iltimos ish turini tanlang:", {
+        await ctx.reply("Iltimos ish turini tanlang: ", {
           reply_markup: {
             inline_keyboard: replyProfessions,
           },
@@ -434,6 +597,82 @@ export class BotService {
       console.log("onSkip error: ", error);
     }
   }
+
+  async onConfirmed(ctx: Context) {
+    try {
+      const user_id = ctx.from?.id;
+      const user = await this.botModel.findByPk(user_id);
+
+      if (!user) {
+        await ctx.reply(`Iltimos oldin botni qayta ishga tushuring`, {
+          parse_mode: "HTML",
+          ...Markup.keyboard([["/start"]])
+            .resize()
+            .oneTime(),
+        });
+      } else if (user && user.status) {
+        const master = await this.masterModel.findOne({
+          where: { user_id },
+          order: [["id", "DESC"]],
+        });
+        if (master && master.last_state == "is_confirmed") {
+          await this.bot.telegram.sendMessage(
+            process.env.ADMIN!,
+            `Sizga tasdiqlash uchun so'rov keldi:\nUsta ismi: ${master.name}\nUstaxona nomi: ${master.workshop_name}\nIsh boshlash vaqti: ${master.start_work_time}\nIsh tugash vaqti: ${master.end_work_time}\nTelefon raqami: ${master.phone_number}`,
+            {
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: "Tasdiqlash ✅",
+                      callback_data: `confirm_${master.id}`,
+                    },
+                  ],
+                  [
+                    {
+                      text: "Rad etish ❌",
+                      callback_data: `rejected_${master.id}`,
+                    },
+                  ],
+                ],
+              },
+            }
+          );
+          await ctx.reply("Tasdiqlash xabari muvaqqiyatli yuborildi:", {
+            ...Markup.removeKeyboard(),
+          });
+          await ctx.reply(
+            "Tez fursatlarda admin tomonidan so'rovingizga javob qaytariladi:",
+            {
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: "Tekshirish 🛠️",
+                      callback_data: `check_${master.id}`,
+                    },
+                    {
+                      text: "Bekor qilish ❌",
+                      callback_data: `reject_master__${master.id}`,
+                    },
+                  ],
+                  [
+                    {
+                      text: "Admin bilan bog'lanish 📞",
+                      callback_data: `call_admin__${user_id}`,
+                    },
+                  ],
+                ],
+              },
+            }
+          );
+        }
+      }
+    } catch (error) {
+      console.log("onConfirmed error: ", error);
+    }
+  }
+
   async onContact(ctx: Context) {
     try {
       if ("contact" in ctx.message!) {
@@ -497,7 +736,7 @@ export class BotService {
                 [Markup.button.contactRequest("📞 Kontaktni ulashish")],
               ]).resize()
             );
-          }else if (master && master.last_state == "workshop_name") {
+          } else if (master && master.last_state == "workshop_name") {
             master.workshop_name = ctx.message.text;
             master.last_state = "address";
             await master.save();
