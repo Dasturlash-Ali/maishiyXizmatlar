@@ -418,23 +418,20 @@ export class BotService {
             .oneTime(),
         });
       } else if (user) {
-        const professionAction = ctx.callbackQuery!["data"];
-        const profession_id = parseInt(professionAction.split("_")[1]);
+        const profession_id = ctx.callbackQuery!["data"].split("_")[1];
+        
         if (profession_id) {
-          const profession =
-            await this.professionModel.findByPk(+profession_id);
-
-          if (profession) {
-            const newMaster = await this.masterModel.create({
+         
+            await this.masterModel.create({
               user_id,
-              profession_id: profession.id,
+              profession_id,
               last_state: "name",
             });
 
             await ctx.reply("Iltimos Ismingizni kiriting:", {
               ...Markup.removeKeyboard(),
             });
-          }
+          
         }
       }
     } catch (error) {
@@ -458,12 +455,9 @@ export class BotService {
         user.role = "master";
         await user.save();
 
-        const professions = await this.professionModel.findAll({
-          where: { last_state: "finish" },
-        });
         let replyProfessions: any[] = [
           [
-            {text: "SARTAROSH", callback_data: `profession_sartarosh`},
+            {text: "SARTAROSH", callback_data: `profession_SARTAROSH`},
             {text: "SOATSOZ", callback_data: `profession_soatsoz`},
           ],
           [
@@ -474,17 +468,7 @@ export class BotService {
             {text: "POYABZAL USTASI", callback_data: `profession_poyabzal`},
             {text: "BOSHQALAR", callback_data: `profession_boshqa`},
           ]
-        ];
-
-        if(professions.length > 0){
-        professions.forEach((profession) =>
-          replyProfessions.push([
-            {
-              text: profession.name,
-              callback_data: `profession_${profession.id}`,
-            },
-          ])
-        )}
+        ]
 
         console.log("Reply Keyboard:", JSON.stringify(replyProfessions, null, 2));
 

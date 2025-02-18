@@ -26,14 +26,10 @@ export class Master extends Model<Master, IMasterCreationAttr> {
   })
   id: number | undefined;
 
-  @ForeignKey(()=>Profession)
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.STRING,
   })
-  profession_id: number | undefined;
-
-  @BelongsTo(()=>Profession)
-  profession : Profession
+  profession_id: string | undefined;
 
   @Column({
     type: DataType.BIGINT,

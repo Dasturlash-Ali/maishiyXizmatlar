@@ -37,9 +37,8 @@ export class BotUpdate {
     await this.botService.onClickMaster(ctx);
   }
 
-  @Action(/^profession_+\d+/)
+  @Action(/^profession_/)
   async onClickProfession(@Ctx() ctx: Context) {
-    console.log("11");
     await this.botService.onClickProfession(ctx);
   }
 
